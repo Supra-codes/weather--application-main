@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Altitude // Weather for you</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="weather-clear-day"> <!-- Background changes based on weather -->
+    <!-- Background Canvas for Particles -->
+    <canvas id="weather-canvas"></canvas>
+    
+    <!-- Shifting Aurora Lights -->
+    <div class="aurora-glow aurora-1"></div>
+    <div class="aurora-glow aurora-2"></div>
+    <div class="aurora-glow aurora-3"></div>
+    
+    <div class="app-layout">
+        <!-- Floating Glass Top Navigation -->
+        <header class="app-navbar glass">
+            <div class="logo-area">
+                <span class="logo-icon">
+                    <svg class="app-logo-svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <!-- Sun -->
+                        <circle cx="16" cy="8" r="4" fill="url(#logo-sun-grad)" stroke="url(#logo-sun-stroke)" stroke-width="1.5" />
+                        <!-- Cloud -->
+                        <path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25" fill="url(#logo-cloud-grad)" stroke="currentColor" stroke-width="1.5" />
+                        
+                        <defs>
+                            <linearGradient id="logo-sun-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ffb74d" />
+                                <stop offset="100%" stop-color="#ff9800" />
+                            </linearGradient>
+                            <linearGradient id="logo-sun-stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ffa726" />
+                                <stop offset="100%" stop-color="#f57c00" />
+                            </linearGradient>
+                            <linearGradient id="logo-cloud-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="rgba(56, 189, 248, 0.4)" />
+                                <stop offset="100%" stop-color="rgba(59, 130, 246, 0.1)" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <div class="brand">
+                    <h1>Altitude</h1>
+                    <span class="brand-sub">Weather for you</span>
+                </div>
+            </div>
+            
+            <div class="search-area">
+                <div class="search-box">
+                    <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18">
+                        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" id="search-input" placeholder="Search a city..." autocomplete="off">
+                    <button id="locate-btn" title="Use GPS Location">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                        </svg>
+                    </button>
+                </div>
+                <!-- Autocomplete Dropdown -->
+                <div id="autocomplete-results" class="autocomplete-dropdown glass hidden"></div>
+            </div>
+
+            <div class="nav-controls">
+                <button id="theme-toggle" class="theme-btn" title="Toggle Theme">
+                    <span id="theme-toggle-icon"></span>
+                </button>
+                <div class="unit-toggle">
+                    <button id="unit-c" class="unit-btn active">°C</button>
+                    <button id="unit-f" class="unit-btn">°F</button>
+                </div>
+                <span id="update-status" class="status-badge">Updating...</span>
+            </div>
+        </header>
+
+        <!-- Bento Layout Grid -->
+        <div class="bento-grid">
+            
+            <!-- HERO CARD (Current Conditions) -->
+            <section class="bento-card bento-hero glass">
+                <div class="hero-top">
+                    <div class="hero-location-time">
+                        <div class="location-display">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span id="current-location">--</span>
+                        </div>
+                        <div class="hero-date-time">
+                            <span id="current-time">--:--</span>
+                            <span id="current-date">--</span>
+                        </div>
+                    </div>
+                    
+                    <div class="weather-brief">
+                        <span id="current-temp" class="hero-temp">--</span>
+                        <span class="hero-temp-unit">°</span>
+                        <div class="hero-temp-bounds">
+                            <span id="today-high">H: --°</span>
+                            <span id="today-low">L: --°</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-bottom">
+                    <div id="main-weather-icon" class="hero-weather-icon">
+                        <!-- Dynamic SVG gets injected here -->
+                    </div>
+                    <div class="hero-desc-area">
+                        <span id="weather-description" class="hero-desc">--</span>
+                        <span id="dashboard-subtitle" class="hero-subtext">Real-time conditions</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RECENT SEARCHES CARD -->
+            <section class="bento-card bento-recents glass">
+                <h3 class="bento-title">Recent Locations</h3>
+                <div id="saved-cities-list" class="saved-cities-list">
+                    <!-- Dynamic list of recent searches -->
+                </div>
+            </section>
+
+            <!-- INDIA WEATHER HUB CARD -->
+            <section class="bento-card bento-india-explorer glass">
+                <h3 class="bento-title">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a10 10 0 0 0-10 10c0 5.25 4.25 9.5 9.5 9.5a9.5 9.5 0 0 0 9.5-9.5A10 10 0 0 0 12 2z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    India Weather Hub
+                </h3>
+                <div class="india-explorer-body">
+                    <div class="india-explorer-controls">
+                        <div class="explorer-select-wrapper">
+                            <select id="india-state-select" class="glass-select">
+                                <option value="">Select State / UT</option>
+                            </select>
+                            <svg class="select-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                        <div class="explorer-select-wrapper">
+                            <select id="india-city-select" class="glass-select" disabled>
+                                <option value="">Select City / Town</option>
+                            </select>
+                            <svg class="select-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </div>
+                    <div class="india-quick-links">
+                        <span class="quick-links-title">Popular Cities</span>
+                        <div id="india-quick-chips" class="quick-chips-container">
+                            <!-- Popular cities populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HOURLY TIMELINE CARD -->
+            <section class="bento-card bento-hourly glass">
+                <h3 class="bento-title">Hourly Forecast</h3>
+                <div class="hourly-forecast-wrapper">
+                    <div id="hourly-forecast-container" class="hourly-forecast-container">
+                        <!-- Dynamic list of 24h cards -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7-DAY FORECAST CARD -->
+            <section class="bento-card bento-forecast glass">
+                <h3 class="bento-title">7-Day Forecast</h3>
+                <div id="daily-forecast-list" class="daily-forecast-list">
+                    <!-- 7 daily forecast rows -->
+                </div>
+            </section>
+
+            <!-- HIGHLIGHT 1: UV Index -->
+            <section class="bento-card bento-highlight bento-uv glass">
+                <div class="card-header">
+                    <span>UV Index</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                </div>
+                <div class="card-body uv-body">
+                    <div class="uv-display">
+                        <span id="uv-val" class="highlight-value">--</span>
+                        <span id="uv-level" class="highlight-desc">--</span>
+                    </div>
+                    <div class="uv-gauge-container">
+                        <div class="uv-gauge-bg"></div>
+                        <div id="uv-gauge-fill" class="uv-gauge-fill"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HIGHLIGHT 2: Wind Status -->
+            <section class="bento-card bento-highlight bento-wind glass">
+                <div class="card-header">
+                    <span>Wind Status</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+                </div>
+                <div class="card-body wind-body">
+                    <div class="wind-info">
+                        <span id="wind-speed" class="highlight-value">--</span>
+                        <span id="wind-unit" class="highlight-unit">km/h</span>
+                    </div>
+                    <div class="wind-direction">
+                        <div class="compass-icon-wrapper">
+                            <svg id="compass-needle" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                <polygon points="12,2 16,12 12,9 8,12" fill="#ff4d4d"/>
+                                <polygon points="12,22 16,12 12,9 8,12" fill="currentColor" opacity="0.5"/>
+                            </svg>
+                        </div>
+                        <span id="wind-dir-text">--</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HIGHLIGHT 3: Sunrise & Sunset -->
+            <section class="bento-card bento-highlight bento-sun glass">
+                <div class="card-header">
+                    <span>Sunrise & Sunset</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                </div>
+                <div class="card-body sun-body">
+                    <div class="sun-arc-container">
+                        <svg class="sun-arc-path" viewBox="0 0 100 50">
+                            <path d="M 5,45 A 40,40 0 0,1 95,45" fill="none" stroke="rgba(255,255,255,0.15)" stroke-dasharray="3,3" stroke-width="2"/>
+                            <path id="sun-arc-progress" d="M 5,45 A 40,40 0 0,1 95,45" fill="none" stroke="url(#sun-gradient)" stroke-width="2.5" stroke-dasharray="141.4" stroke-dashoffset="141.4"/>
+                            <defs>
+                                <linearGradient id="sun-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#ff7b00"/>
+                                    <stop offset="50%" stop-color="#ffb700"/>
+                                    <stop offset="100%" stop-color="#ff5100"/>
+                                </linearGradient>
+                            </defs>
+                            <circle id="sun-arc-node" cx="5" cy="45" r="4.5" fill="#ffea00" />
+                        </svg>
+                    </div>
+                    <div class="sun-times">
+                        <div class="sun-time-item">
+                            <span class="sun-label">Sunrise</span>
+                            <span id="sunrise-time" class="sun-val">--:--</span>
+                        </div>
+                        <div class="sun-time-item">
+                            <span class="sun-label">Sunset</span>
+                            <span id="sunset-time" class="sun-val">--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HIGHLIGHT 4: Humidity -->
+            <section class="bento-card bento-highlight bento-humidity glass">
+                <div class="card-header">
+                    <span>Humidity</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s-8 6.78-8 11.5A7.5 7.5 0 0 0 12 21a7.5 7.5 0 0 0 7.5-7.5C19.5 8.78 12 2 12 2z"/></svg>
+                </div>
+                <div class="card-body humidity-body">
+                    <div class="circular-progress-container">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path id="humidity-progress" class="circle-fill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                        <div class="inner-val">
+                            <span id="humidity-val" class="highlight-value">--</span>
+                            <span class="highlight-unit">%</span>
+                        </div>
+                    </div>
+                    <span id="humidity-desc" class="highlight-desc">--</span>
+                </div>
+            </section>
+
+            <!-- METRIC GROUP (Visibility, Air Pressure, Dew Point) -->
+            <section class="bento-card bento-metrics glass">
+                <div class="metrics-grid">
+                    
+                    <!-- Visibility Card -->
+                    <div class="metric-item">
+                        <div class="metric-head">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <span>Visibility</span>
+                        </div>
+                        <div class="metric-body">
+                            <span id="visibility-val" class="highlight-value">--</span>
+                            <span id="visibility-unit" class="highlight-unit">km</span>
+                        </div>
+                        <span id="visibility-desc" class="highlight-desc">--</span>
+                    </div>
+
+                    <!-- Air Pressure Card -->
+                    <div class="metric-item">
+                        <div class="metric-head">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            <span>Pressure</span>
+                        </div>
+                        <div class="metric-body">
+                            <span id="pressure-val" class="highlight-value">--</span>
+                            <span id="pressure-unit" class="highlight-unit">hPa</span>
+                        </div>
+                        <span id="pressure-desc" class="highlight-desc">--</span>
+                    </div>
+
+                    <!-- Dew Point Card -->
+                    <div class="metric-item">
+                        <div class="metric-head">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>
+                            <span>Dew Point</span>
+                        </div>
+                        <div class="metric-body">
+                            <span id="dew-point-val" class="highlight-value">--</span>
+                            <span class="highlight-unit">°</span>
+                        </div>
+                        <span id="dew-point-desc" class="highlight-desc">--</span>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- TRENDS CHART CARD -->
+            <section class="bento-card bento-chart glass">
+                <div class="chart-header">
+                    <h3 class="bento-title">24-Hour Trends</h3>
+                    <div class="chart-toggle">
+                        <button id="chart-temp-btn" class="chart-btn active">Temperature</button>
+                        <button id="chart-rain-btn" class="chart-btn">Precipitation</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="weatherChart"></canvas>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="indiaData.js"></script>
+    <script src="weatherCodes.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
